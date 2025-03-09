@@ -1,0 +1,34 @@
+name: Playwright UI Automation (Python)
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: 'Website URL to test'
+        required: true
+        default: 'https://example.com'
+      browser:
+        description: 'Browser to use (chromium/firefox/webkit)'
+        required: true
+        default: 'chromium'
+
+jobs:
+  ui-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install Playwright
+        run: |
+          pip install playwright
+          playwright install
+
+      - name: Run Playwright Test
+        run: python test_script.py "${{ github.event.inputs.url }}" "${{ github.event.inputs.browser }}"
