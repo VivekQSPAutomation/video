@@ -31,4 +31,4 @@ jobs:
           playwright install
 
       - name: Run Playwright Test
-        run: python test_script.py "${{ github.event.inputs.url }}" "${{ github.event.inputs.browser }}"
+        run: python app.py "${{ github.event.inputs.url }}" "${{ github.event.inputs.browser }}"
