@@ -21,11 +21,30 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Install dependencies
+      - name: Install Chrome and Chromedriver
         run: |
           sudo apt-get update
           sudo apt-get install -y chromium-browser chromium-chromedriver
-          pip install -r requirements.txt
+          echo "✅ Chrome and Chromedriver installed"
+
+      - name: Verify Chrome installation
+        run: |
+          if command -v chromium-browser > /dev/null; then
+            echo "✅ Chromium found at: $(which chromium-browser)"
+            chromium-browser --version
+          else
+            echo "❌ Chromium not found!" && exit 1
+          fi
+
+          if command -v chromedriver > /dev/null; then
+            echo "✅ Chromedriver found at: $(which chromedriver)"
+            chromedriver --version
+          else
+            echo "❌ Chromedriver not found!" && exit 1
+          fi
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
 
       - name: Run Selenium Test
         env:
