@@ -1,4 +1,4 @@
-name: Playwright UI Automation (Python)
+name: Selenium UI Automation (Python)
 
 on:
   workflow_dispatch:
@@ -6,11 +6,7 @@ on:
       url:
         description: 'Website URL to test'
         required: true
-        default: 'https://example.com'
-      browser:
-        description: 'Browser to use (chromium/firefox/webkit)'
-        required: true
-        default: 'chromium'
+        default: 'https://invideo.io/'
 
 jobs:
   ui-test:
@@ -25,10 +21,14 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Install Playwright
+      - name: Install dependencies
         run: |
-          pip install playwright
-          playwright install
+          sudo apt-get update
+          sudo apt-get install -y chromium-browser chromium-chromedriver
+          sudo ln -s /usr/lib/chromium-browser/chromedriver /usr/bin/chromedriver
+          pip install -r requirements.txt
 
-      - name: Run Playwright Test
-        run: python app.py "${{ github.event.inputs.url }}" "${{ github.event.inputs.browser }}"
+      - name: Run Selenium Test
+        env:
+          URL_TO_TEST: ${{ github.event.inputs.url }}
+        run: python app.py "$URL_TO_TEST"
