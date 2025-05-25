@@ -52,6 +52,7 @@ def run_selenium(url: str, browser_type: str):
     driver.switch_to.window(driver.window_handles[0])
 
     time.sleep(20)
+    wait.until(EC.presence_of_element_located((By.XPATH,"//*[@id='dismiss-button']"))).click()
     otp_element = wait.until(EC.presence_of_element_located((By.XPATH, "//div[@class='descr']")))
     otp_text = otp_element.text
     otp_match = re.search(r"\d+", otp_text)
