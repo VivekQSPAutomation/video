@@ -21,27 +21,14 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Install Chrome and Chromedriver
+      - name: Install Google Chrome
         run: |
           sudo apt-get update
-          sudo apt-get install -y chromium-browser chromium-chromedriver
-          echo "✅ Chrome and Chromedriver installed"
-
-      - name: Verify Chrome installation
-        run: |
-          if command -v chromium-browser > /dev/null; then
-            echo "✅ Chromium found at: $(which chromium-browser)"
-            chromium-browser --version
-          else
-            echo "❌ Chromium not found!" && exit 1
-          fi
-
-          if command -v chromedriver > /dev/null; then
-            echo "✅ Chromedriver found at: $(which chromedriver)"
-            chromedriver --version
-          else
-            echo "❌ Chromedriver not found!" && exit 1
-          fi
+          sudo apt-get install -y wget gnupg
+          wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+          sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list'
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
 
       - name: Install Python dependencies
         run: pip install -r requirements.txt
