@@ -96,7 +96,7 @@ def run_selenium(url: str, browser_type: str):
     brief_input.send_keys("Make a video on cat moving on the boat")
 
     generate_video = wait.until(
-        EC.presence_of_element_located((By.XPATH, "//button[.//text()[contains(., 'Generate a video')]]")))
+        EC.presence_of_element_located((By.XPATH, "//*[contains(text(), 'Generate a video')]")))
     generate_video.click()
 
     # Interact with elements using the new method
