@@ -2,6 +2,7 @@ import os
 import re
 import sys
 import time
+import pyperclip
 from platformdirs import user_downloads_dir
 from selenium import webdriver
 from selenium.common import NoSuchElementException
@@ -25,10 +26,10 @@ def run_selenium(url: str, browser_type: str):
     wait = WebDriverWait(driver, 1200)
 
     # Open temp mail page
-    driver.get("https://tempmailo.com/#")
-    time.sleep(5)
-    email_input = wait.until(EC.presence_of_element_located((By.XPATH, "//input[@id='i-email']")))
-    email = email_input.get_attribute("value")
+    driver.get("https://temp-mail.io/en")
+    time.sleep(10)
+    email_input = wait.until(EC.presence_of_element_located((By.XPATH, "//*[@id='email']")))
+    email = email_input.get_attribute('value')
     print("Temporary Email:", email)
 
     # Open target website
@@ -50,10 +51,8 @@ def run_selenium(url: str, browser_type: str):
 
     # Wait for OTP email
     driver.switch_to.window(driver.window_handles[0])
-
     time.sleep(20)
-    wait.until(EC.presence_of_element_located((By.XPATH,"//*[@id='dismiss-button']"))).click()
-    otp_element = wait.until(EC.presence_of_element_located((By.XPATH, "//div[@class='descr']")))
+    otp_element = wait.until(EC.presence_of_element_located((By.XPATH, "//*[contains(@class,'message__subject')]")))
     otp_text = otp_element.text
     otp_match = re.search(r"\d+", otp_text)
     otp = otp_match.group() if otp_match else ""
