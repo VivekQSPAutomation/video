@@ -10,7 +10,7 @@ on:
 
 jobs:
   ui-test:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
       - name: Checkout repository
@@ -23,12 +23,13 @@ jobs:
 
       - name: Install Google Chrome
         run: |
-          sudo apt-get update
-          sudo apt-get install -y wget gnupg
-          wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
-          sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list'
-          sudo apt-get update
-          sudo apt-get install -y google-chrome-stable
+          choco install googlechrome --no-progress
+        shell: powershell
+
+      - name: Add Chrome to PATH
+        run: |
+          echo "C:\Program Files\Google\Chrome\Application" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+        shell: powershell
 
       - name: Install Python dependencies
         run: pip install -r requirements.txt
@@ -36,4 +37,5 @@ jobs:
       - name: Run Selenium Test
         env:
           URL_TO_TEST: ${{ github.event.inputs.url }}
-        run: python app.py "$URL_TO_TEST"
+        run: python app.py "$env:URL_TO_TEST"
+        shell: powershell
