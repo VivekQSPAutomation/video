@@ -119,7 +119,7 @@ def run_selenium(url: str,message:str):
             latest_file = get_latest_file(get_downloads_folder())
             if latest_file:
                 print(f"Downloaded file: {latest_file}")
-                public_url = upload_to_transfersh(latest_file)
+                public_url = upload_to_fileio(latest_file)
                 print("Shareable public URL:", public_url)
                 break
             # Keeps script running
@@ -188,17 +188,15 @@ def get_downloads_folder():
     downloads_path = user_downloads_dir()
     return downloads_path
 
-def upload_to_transfersh(file_path):
-    filename = os.path.basename(file_path)
+def upload_to_fileio(file_path):
     with open(file_path, 'rb') as f:
-        print(f"Uploading {filename} to transfer.sh...")
-        response = requests.put(f"https://transfer.sh/{filename}", data=f)
-        if response.status_code == 200:
-            public_url = response.text.strip()
-            print("File uploaded successfully:", public_url)
-            return public_url
-        else:
-            raise Exception(f"Upload failed with status {response.status_code}: {response.text}")
+        response = requests.post('https://file.io', files={'file': f})
+    if response.ok:
+        public_url = response.json()['link']
+        print("Public URL:", public_url)
+        return public_url
+    else:
+        raise Exception("Upload failed:", response.text)
 
 
 if __name__ == "__main__":
