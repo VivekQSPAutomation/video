@@ -204,7 +204,7 @@ def upload_to_fileio(file_path):
     with open(file_path, 'rb') as f:
         response = requests.post('https://file.io', files={'file': f})
     if response.ok:
-        public_url = response.json()['link']
+        public_url = response.json()
         print("Public URL:", public_url)
         return public_url
     else:
