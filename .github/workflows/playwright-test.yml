@@ -52,6 +52,6 @@ jobs:
       - name: Run Selenium Test
         env:
           URL_TO_TEST: ${{ github.event.inputs.url }}
-          MESSAGE: ${{github.event.input.message}
+          MESSAGE: ${{ github.event.inputs.message }}
         run: python app.py "$env:URL_TO_TEST" "$env:MESSAGE"
         shell: powershell
