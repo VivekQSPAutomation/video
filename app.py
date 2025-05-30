@@ -2,7 +2,7 @@ import os
 import re
 import sys
 import time
-
+import requests
 from platformdirs import user_downloads_dir
 from selenium import webdriver
 from selenium.common import NoSuchElementException
