@@ -190,13 +190,7 @@ def get_latest_file(download_dir):
 
 
 def get_downloads_folder():
-    if os.name == 'posix':  # Unix/Linux/MacOS
-        downloads_path = os.path.expanduser('~/Downloads')
-    elif os.name == 'nt':  # Windows
-        downloads_path = os.path.join(os.getenv('USERPROFILE'), 'Downloads')
-    else:
-        raise RuntimeError("Unsupported operating system")
-
+    downloads_path = user_downloads_dir()
     return downloads_path
 
 
