@@ -7,6 +7,10 @@ on:
         description: 'Website URL to test'
         required: true
         default: 'https://invideo.io/'
+      message:
+        description: "Message for the content"
+        required: true
+        default: "Cat on the moving train"
 
 jobs:
   ui-test:
@@ -48,5 +52,6 @@ jobs:
       - name: Run Selenium Test
         env:
           URL_TO_TEST: ${{ github.event.inputs.url }}
-        run: python app.py "$env:URL_TO_TEST"
+          MESSAGE: ${{github.event.input.message}
+        run: python app.py "$env:URL_TO_TEST" "$env:MESSAGE"
         shell: powershell

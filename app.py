@@ -13,7 +13,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 driver = webdriver.Chrome()
 
 
-def run_selenium(url: str, browser_type: str):
+def run_selenium(url: str,message:str):
     global public_url
     driver.set_window_size(1920, 1200)
     wait = WebDriverWait(driver, 1200)
@@ -92,7 +92,7 @@ def run_selenium(url: str, browser_type: str):
 
     # Enter brief
     brief_input = wait.until(EC.presence_of_element_located((By.XPATH, "//textarea[@name='brief']")))
-    brief_input.send_keys("Make a video on cat moving on the boat")
+    brief_input.send_keys(message)
 
     generate_video = wait.until(
         EC.presence_of_element_located((By.XPATH, "//*[contains(text(), 'Generate a video')]")))
@@ -203,5 +203,5 @@ def upload_to_transfersh(file_path):
 
 if __name__ == "__main__":
     url = sys.argv[1] if len(sys.argv) > 1 else "https://invideo.io/"
-    browser_type = sys.argv[2] if len(sys.argv) > 2 else "chrome"
-    run_selenium(url, browser_type)
+    message = sys.argv[2]
+    run_selenium(url,message)
