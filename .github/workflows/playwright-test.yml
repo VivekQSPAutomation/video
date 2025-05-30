@@ -21,9 +21,11 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Install Google Chrome
+      - name: Download and Install Google Chrome
         run: |
-          choco install googlechrome --no-progress
+          $ChromeInstaller = "$env:TEMP\chrome_installer.exe"
+          Invoke-WebRequest "https://dl.google.com/chrome/install/latest/chrome_installer.exe" -OutFile $ChromeInstaller
+          Start-Process -FilePath $ChromeInstaller -Args "/silent /install" -Wait
         shell: powershell
 
       - name: Add Chrome to PATH
