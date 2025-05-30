@@ -5,7 +5,7 @@ import time
 import requests
 from platformdirs import user_downloads_dir
 from selenium import webdriver
-from selenium.common import NoSuchElementException
+from selenium.common import NoSuchElementException, TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
@@ -13,9 +13,10 @@ from selenium.webdriver.support.ui import WebDriverWait
 driver = webdriver.Chrome()
 
 
-def run_selenium(url: str,message:str):
+def run_selenium(url: str, message: str):
     global public_url
-    driver.set_window_size(1920, 1200)
+    driver.set_window_size(1382, 744)
+    global wait
     wait = WebDriverWait(driver, 1200)
 
     # Open temp mail page
@@ -90,24 +91,34 @@ def run_selenium(url: str,message:str):
     submit_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@type='submit']")))
     submit_button.click()
 
+    version = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@data-state='closed']")))
+    version = version.text
+
     # Enter brief
     brief_input = wait.until(EC.presence_of_element_located((By.XPATH, "//textarea[@name='brief']")))
     brief_input.send_keys(message)
 
     generate_video = wait.until(
-        EC.presence_of_element_located((By.XPATH, "//*[contains(text(), 'Generate a video')]")))
+        EC.presence_of_element_located((By.XPATH, "//*[contains(text(), 'Generate')]")))
     generate_video.click()
 
     # Interact with elements using the new method
     wait_and_click('//div[contains(text(),"Stock")]')
     # wait_and_click('//button[contains(@value,"1.0")]')
     wait_and_click("//*[text()='Continue']")  # Submit button
+    if version != "v3.0":
+        wait_and_click("(//*[text()='Continue'])[2]")
+        # continue button
     wait_and_click("//*[text()='Download']")  # Download button
 
     wait_and_click('//div[contains(text(),"Stock")]')  # Stock watermark
     wait_and_click('//div[contains(text(),"Normal")]')  # Normal button
     # wait_and_click('//div[contains(text(),"1080")]')  # Quality button
-    wait_and_click('//div[contains(text(),"Continue")]')  # Continue button
+    if version != "v3.0":
+        wait_and_click('(//*[text()="Continue"])[2]')
+    else:
+        wait_and_click('(//*[text()="Continue"])')
+        # Continue button
 
     # Keep the browser open
     print("Script completed. Browser will remain open.")
@@ -188,6 +199,7 @@ def get_downloads_folder():
     downloads_path = user_downloads_dir()
     return downloads_path
 
+
 def upload_to_fileio(file_path):
     with open(file_path, 'rb') as f:
         response = requests.post('https://file.io', files={'file': f})
@@ -199,7 +211,24 @@ def upload_to_fileio(file_path):
         raise Exception("Upload failed:", response.text)
 
 
+def retry_click(xpath, max_attempts=3):
+    attempts = 0
+    while attempts < max_attempts:
+        try:
+            generate_video = wait.until(
+                EC.presence_of_element_located((By.XPATH, xpath))
+            )
+            generate_video.click()
+            print("Clicked successfully!")
+            break
+        except TimeoutException:
+            print(f"Attempt {attempts + 1}: Timed out waiting for element. Retrying...")
+            attempts += 1
+    else:
+        print("Failed to click after maximum attempts.")
+
+
 if __name__ == "__main__":
     url = sys.argv[1] if len(sys.argv) > 1 else "https://invideo.io/"
-    message = sys.argv[2]
-    run_selenium(url,message)
+    message = sys.argv[2] if len(sys.argv) > 2 else "Cat on the moving train"
+    run_selenium(url, message)
