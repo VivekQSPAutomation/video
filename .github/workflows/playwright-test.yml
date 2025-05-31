@@ -65,7 +65,7 @@ jobs:
           echo "video_path=$($videoPath.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
       - name: Upload video as artifact
-        uses: actions/upload-artifact@v3.1.4
+        uses: actions/upload-artifact@cdbd29592e8e15d8f18c146a36064c223667513d
         with:
           name: uploaded-video
           path: ${{ steps.find_video.outputs.video_path }}
