@@ -130,7 +130,7 @@ def run_selenium(url: str, message: str):
             latest_file = get_latest_file(get_downloads_folder())
             if latest_file:
                 print(f"Downloaded file: {latest_file}")
-                public_url = upload_to_fileio(latest_file)
+                # public_url = upload_to_fileio(latest_file)
                 print("Shareable public URL:", public_url)
                 break
             # Keeps script running
@@ -202,30 +202,14 @@ def get_downloads_folder():
 
 def upload_to_fileio(file_path):
     with open(file_path, 'rb') as f:
-        response = requests.post('https://file.io', files={'file': f})
-    if response.ok:
-        public_url = response.json()
+        response = requests.post('https://0x0.st', files={'file': f})
+    if response.status_code == 200:
+        public_url = response
         print("Public URL:", public_url)
         return public_url
     else:
         raise Exception("Upload failed:", response.text)
 
-
-def retry_click(xpath, max_attempts=3):
-    attempts = 0
-    while attempts < max_attempts:
-        try:
-            generate_video = wait.until(
-                EC.presence_of_element_located((By.XPATH, xpath))
-            )
-            generate_video.click()
-            print("Clicked successfully!")
-            break
-        except TimeoutException:
-            print(f"Attempt {attempts + 1}: Timed out waiting for element. Retrying...")
-            attempts += 1
-    else:
-        print("Failed to click after maximum attempts.")
 
 
 if __name__ == "__main__":
