@@ -93,6 +93,7 @@ def run_selenium(url: str, message: str):
 
     version = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@data-state='closed']")))
     version = version.text
+    print(version)
 
     # Enter brief
     brief_input = wait.until(EC.presence_of_element_located((By.XPATH, "//textarea[@name='brief']")))
