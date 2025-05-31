@@ -56,9 +56,6 @@ jobs:
         run: python app.py "$env:URL_TO_TEST" "$env:MESSAGE"
         shell: powershell
 
-      - name: Checkout code
-        uses: actions/checkout@v3
-
       - name: Find generated video file
         id: find_video
         shell: pwsh
