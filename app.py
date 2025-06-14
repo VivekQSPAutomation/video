@@ -14,7 +14,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 driver = webdriver.Chrome()
 
 
-def run_selenium(url: str, message: str):
+def run_selenium(url: str, prompt: str, message: str):
     global public_url
     driver.set_window_size(1382, 744)
     global wait
@@ -96,7 +96,7 @@ def run_selenium(url: str, message: str):
     version = version.text
     print(version)
 
-    generate_video(message)
+    generate_video(prompt)
 
     # Interact with elements using the new method
     # Submit button
@@ -104,7 +104,7 @@ def run_selenium(url: str, message: str):
         while True:
             if wait_for_presence("//*[contains(text(),'credits')]"):
                 wait_and_click("//p[text()='Create New']/parent::*/parent::a")
-                generate_video(message)
+                generate_video(prompt)
                 if wait_for_presence("//button[.//text()[contains(., 'Stock')]]"):
                     break
             else:
@@ -370,5 +370,6 @@ class VideoPost:
 
 if __name__ == "__main__":
     url = sys.argv[1] if len(sys.argv) > 1 else "https://invideo.io/"
-    message = sys.argv[2] if len(sys.argv) > 2 else " Make 15 seconds promotional video for the Cat on the moving train"
-    run_selenium(url, message)
+    prompt = sys.argv[2] if len(sys.argv) > 2 else "Enter a prompt for the video"
+    message = sys.argv[3] if len(sys.argv) > 3 else " Make 15 seconds promotional video for the Cat on the moving train"
+    run_selenium(url, prompt, message)

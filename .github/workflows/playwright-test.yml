@@ -7,10 +7,14 @@ on:
         description: 'Website URL to test'
         required: true
         default: 'https://invideo.io/'
-      message:
-        description: "Message for the content"
+      prompt:
+        description: "Enter the prompt"
         required: true
-        default: "Cat on the moving train"
+        default: "Enter a prompt for the Video "
+      message:
+        description: "Enter the message for the comments"
+        required: true
+        default: "https://wellmedic.in"
 
 jobs:
   ui-test:
