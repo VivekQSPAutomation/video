@@ -2,10 +2,11 @@ import os
 import re
 import sys
 import time
+
 import requests
 from platformdirs import user_downloads_dir
 from selenium import webdriver
-from selenium.common import NoSuchElementException, TimeoutException
+from selenium.common import NoSuchElementException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
@@ -95,48 +96,60 @@ def run_selenium(url: str, message: str):
     version = version.text
     print(version)
 
-    # Enter brief
-    brief_input = wait.until(EC.presence_of_element_located((By.XPATH, "//textarea[@name='brief']")))
-    brief_input.send_keys(message)
-
-    generate_video = wait.until(
-        EC.presence_of_element_located((By.XPATH, "//*[contains(text(), 'Generate')]")))
-    generate_video.click()
+    generate_video(message)
 
     # Interact with elements using the new method
-    wait_and_click('//div[contains(text(),"Stock")]')
-    # wait_and_click('//button[contains(@value,"1.0")]')
-    wait_and_click("//*[text()='Continue']")  # Submit button
+    # Submit button
     if version != "v3.0":
-        wait_and_click("(//*[text()='Continue'])[2]")
+        while True:
+            if wait_for_presence("//*[contains(text(),'credits')]"):
+                wait_and_click("//p[text()='Create New']/parent::*/parent::a")
+                generate_video(message)
+                if wait_for_presence("//button[.//text()[contains(., 'Stock')]]"):
+                    break
+            else:
+                break
+
+        wait_and_click("//*[contains(text(),'Continue')]")
+        wait_and_click("//*[contains(text(),'Continue')]")
+        wait_and_click("(//*[contains(text(),'Edit & Download')])[2]")
+        # wait_and_click("//*[contains(text(),'Continue')]")
+        # wait_and_click("(//*[contains(text(),'Continue')])[2]")
+        # wait_and_click("(//*[contains(text(),'Continue')])[2]")
+    else:
+        wait_and_click('//div[contains(text(),"Stock")]')
+        # wait_and_click('//button[contains(@value,"1.0")]')
+        wait_and_click("//*[contains(text(),'Continue')]")
         # continue button
     wait_and_click("//*[text()='Download']")  # Download button
 
     wait_and_click('//div[contains(text(),"Stock")]')  # Stock watermark
     wait_and_click('//div[contains(text(),"Normal")]')  # Normal button
-    # wait_and_click('//div[contains(text(),"1080")]')  # Quality button
+    wait_and_click('//button[@value="480"]')  # Quality button
     if version != "v3.0":
-        wait_and_click('(//*[text()="Continue"])[2]')
+        wait_and_click('(//*[contains(text(), "Continue")])[3]')
     else:
-        wait_and_click('(//*[text()="Continue"])')
+        wait_and_click('(//*[contains(text(), "Continue")])')
         # Continue button
 
     # Keep the browser open
     print("Script completed. Browser will remain open.")
-    try:
-        while True:
-            time.sleep(1)
-            wait_for_download(get_downloads_folder())
+    while True:
+        time.sleep(1)
+        wait_for_download(get_downloads_folder())
+        latest_file = get_latest_file(get_downloads_folder())
+        if latest_file:
+            print(f"Downloaded file: {latest_file}")
+            file = latest_file.replace('\\', "/")
+            VideoPost().upload_to_both(message=message, video_file=file)
+            return True
+        else:
+            return False
 
-            latest_file = get_latest_file(get_downloads_folder())
-            if latest_file:
-                print(f"Downloaded file: {latest_file}")
-                # public_url = upload_to_fileio(latest_file)
-                print("Shareable public URL:", public_url)
-                break
-            # Keeps script running
-    except KeyboardInterrupt:
-        print("\nExiting script...")
+
+def generate_video(message):
+    wait_and_sendkeys("//textarea[@name='brief']", message)
+    wait_and_click("//*[contains(text(), 'Generate')]")
 
 
 def wait_until_element(xpath, timeout=99, poll_frequency=1):
@@ -152,10 +165,33 @@ def wait_until_element(xpath, timeout=99, poll_frequency=1):
             time.sleep(poll_frequency)  # Wait before retrying
 
 
+def is_element_present(xpath, timeout=99, poll_frequency=1):
+    """Check if an element is present within the specified timeout."""
+    start_time = time.time()
+    while True:
+        try:
+            element = driver.find_element(By.XPATH, xpath)
+            return True  # Element found
+        except NoSuchElementException:
+            if time.time() - start_time > timeout:
+                return False  # Timeout reached, element not found
+            time.sleep(poll_frequency)
+
+
 # Function to check for element and click it
 def wait_and_click(xpath, timeout=12000):
     element = wait_until_element(xpath, timeout)
     element.click()
+
+
+def wait_and_sendkeys(xpath, message, timeout=12000):
+    element = wait_until_element(xpath, timeout)
+    element.send_keys(message)
+
+
+def wait_for_presence(xpath, timeout=150):
+    element = is_element_present(xpath, timeout=timeout)
+    return element
 
 
 def wait_for_download(download_dir, timeout=1500):
@@ -201,19 +237,138 @@ def get_downloads_folder():
     return downloads_path
 
 
-def upload_to_fileio(file_path):
-    with open(file_path, 'rb') as f:
-        response = requests.post('https://0x0.st', files={'file': f})
-    if response.status_code == 200:
-        public_url = response
-        print("Public URL:", public_url)
-        return public_url
-    else:
-        raise Exception("Upload failed:", response.text)
+class VideoContent:
+    def __init__(self, blog_name, blog_description, blog_image, created_at, status, video_url):
+        self.blog_name = blog_name
+        self.blog_description = blog_description
+        self.blog_image = blog_image
+        self.created_at = created_at
+        self.status = status
+        self.video_url = video_url
 
+
+class VideoPost:
+
+    def __init__(self):
+        try:
+            response = requests.get("https://vivek05novvv.pythonanywhere.com/data")
+            response.raise_for_status()
+            data = response.json()
+
+            self.facebook_page = data.get('facebook_page')
+            self.insta_page = data.get('insta_page')
+            self.page_access_token = data.get('page_access_token')
+        except requests.exceptions.RequestException as e:
+            print(f"Error fetching data: {e}")
+            self.facebook_page = None
+            self.insta_page = None
+            self.page_access_token = None
+
+    def upload_to_facebook(self, video_file=None):
+        """Uploads video to Facebook Page."""
+        url = f"https://graph-video.facebook.com/v21.0/{self.facebook_page}/videos"
+
+        if video_file:
+            with open(video_file, 'rb') as video:
+                files = {'file': video}
+                payload = {
+                    "access_token": self.page_access_token
+                }
+                response = requests.post(url, files=files, data=payload)
+
+                if response.status_code == 200:
+                    print("Facebook video uploaded successfully.")
+                    res = response.json().get("id")
+                    time.sleep(15)
+                    return self.get_facebook_video_url(res), True
+                else:
+                    print("Facebook upload failed:", response.text)
+                    return response.text
+
+    def upload_to_instagram(self, message, video_file=None):
+        """Uploads video to Instagram and ensures it's ready before publishing."""
+        upload_url = f"https://graph.facebook.com/v21.0/{self.insta_page}/media"
+
+        upload_payload = {
+            "access_token": self.page_access_token,
+            "media_type": "REELS",
+            "video_url": video_file,
+            "caption": message
+        }
+
+        # Step 1: Upload video data to Instagram
+        upload_response = requests.post(upload_url, data=upload_payload)
+        upload_data = upload_response.json()
+
+        if 'id' not in upload_data:
+            print("Instagram upload failed:", upload_response.text)
+            return None
+
+        media_id = upload_data['id']
+        print("Instagram media uploaded. Media ID:", media_id)
+
+        # Step 2: Poll for media processing status
+        status_url = f"https://graph.facebook.com/v21.0/{media_id}"
+        for attempt in range(10):  # Poll up to 10 times (adjust as needed)
+            time.sleep(5)  # Wait before each poll
+            status_response = requests.get(status_url, params={
+                "access_token": self.page_access_token,
+                "fields": "status"
+            })
+            status_data = status_response.json()
+            if 'status' in status_data:
+                processing_status = status_data['status']
+                print(f"Attempt {attempt + 1}: Media status - {processing_status}")
+                if 'Finished' in processing_status:
+                    break
+                elif processing_status == 'ERROR':
+                    print("Instagram media processing failed:", status_data)
+                    return False
+            else:
+                print("Error fetching media status:", status_data)
+                return False
+        else:
+            print("Media processing timed out.")
+            return False
+
+            # Step 3: Publish the uploaded media
+        publish_url = f"https://graph.facebook.com/v21.0/{self.insta_page}/media_publish"
+        publish_payload = {
+            "access_token": self.page_access_token,
+            "creation_id": media_id
+        }
+        publish_response = requests.post(publish_url, data=publish_payload)
+        if publish_response.status_code == 200:
+            print("Video published on Instagram successfully.")
+            return True
+        else:
+            print("Instagram publishing failed:", publish_response.text)
+            return False
+
+    def get_facebook_video_url(self, video_id):
+        print("[*] Getting Facebook video URL...")
+        url = f"https://graph.facebook.com/v21.0/{video_id}?fields=permalink_url,source&access_token={self.page_access_token}"
+        response = requests.get(url)
+        res_json = response.json()
+
+        video_url = res_json.get('source')  # Direct .mp4 URL
+        if not video_url:
+            raise Exception("Video source URL not found.")
+
+        print(f"[+] Facebook video URL: {video_url}")
+        return video_url
+
+    def upload_to_both(self, message, video_file):
+        """Uploads video to both Facebook and Instagram."""
+        video_url, facebook_result = self.upload_to_facebook(video_file)
+        if facebook_result:
+            instagram_result = self.upload_to_instagram(message, video_url)
+            return instagram_result
+        else:
+            return False
 
 
 if __name__ == "__main__":
     url = sys.argv[1] if len(sys.argv) > 1 else "https://invideo.io/"
-    message = sys.argv[2] if len(sys.argv) > 2 else "Cat on the moving train"
+    message = sys.argv[2] if len(sys.argv) > 2 else " Make 15 seconds promotional video for the Cat on the moving train"
     run_selenium(url, message)
