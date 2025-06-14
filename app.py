@@ -15,7 +15,6 @@ driver = webdriver.Chrome()
 
 
 def run_selenium(url: str, prompt: str, message: str):
-    global public_url
     driver.set_window_size(1382, 744)
     global wait
     wait = WebDriverWait(driver, 1200)
