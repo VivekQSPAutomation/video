@@ -309,7 +309,7 @@ class VideoPost:
 
         # Step 2: Poll for media processing status
         status_url = f"https://graph.facebook.com/v21.0/{media_id}"
-        for attempt in range(10):  # Poll up to 10 times (adjust as needed)
+        for attempt in range(50):  # Poll up to 10 times (adjust as needed)
             time.sleep(5)  # Wait before each poll
             status_response = requests.get(status_url, params={
                 "access_token": self.page_access_token,
