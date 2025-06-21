@@ -121,6 +121,7 @@ def run_selenium(url: str, prompt: str, message: str):
         # wait_and_click('//button[contains(@value,"1.0")]')
         wait_and_click("//*[contains(text(),'Continue')]")
         # continue button
+    time.sleep(4)
     wait_and_click("//*[text()='Download']")  # Download button
     time.sleep(5)
     wait_and_click('//div[contains(text(),"Stock")]')  # Stock watermark
