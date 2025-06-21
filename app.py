@@ -110,7 +110,8 @@ def run_selenium(url: str, prompt: str, message: str):
                 break
 
         wait_and_click("//*[contains(text(),'Continue')]")
-        wait_and_click("//*[contains(text(),'Continue')]")
+        if wait_for_presence("//*[contains(text(),'Continue')]"):
+            wait_and_click("//*[contains(text(),'Continue')]")
         wait_and_click("(//*[contains(text(),'Edit & Download')])[2]")
         # wait_and_click("//*[contains(text(),'Continue')]")
         # wait_and_click("(//*[contains(text(),'Continue')])[2]")
@@ -121,14 +122,14 @@ def run_selenium(url: str, prompt: str, message: str):
         wait_and_click("//*[contains(text(),'Continue')]")
         # continue button
     wait_and_click("//*[text()='Download']")  # Download button
-
+    time.sleep(5)
     wait_and_click('//div[contains(text(),"Stock")]')  # Stock watermark
     wait_and_click('//div[contains(text(),"Normal")]')  # Normal button
     wait_and_click('//button[@value="480"]')  # Quality button
-    if version != "v3.0":
-        wait_and_click('(//*[contains(text(), "Continue")])[3]')
-    else:
-        wait_and_click('(//*[contains(text(), "Continue")])')
+    # if version != "v3.0":
+    #     wait_and_click('(//*[contains(text(), "Continue")])')
+    # else:
+    wait_and_click('//*[contains(text(), "Continue")]')
         # Continue button
 
     # Keep the browser open
