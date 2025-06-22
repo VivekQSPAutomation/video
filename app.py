@@ -6,7 +6,7 @@ import time
 import requests
 from platformdirs import user_downloads_dir
 from selenium import webdriver
-from selenium.common import NoSuchElementException
+from selenium.common import NoSuchElementException, ElementClickInterceptedException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
@@ -101,10 +101,10 @@ def run_selenium(url: str, prompt: str, message: str):
     # Submit button
     if version != "v3.0":
         while True:
-            if wait_for_presence("//*[contains(text(),'credits')]"):
+            if wait_for_presence("//text()[contains(., 'credits')]/parent::*"):
                 wait_and_click("//p[text()='Create New']/parent::*/parent::a")
                 generate_video(prompt)
-                if wait_for_presence("//button[.//text()[contains(., 'Stock')]]"):
+                if not wait_for_presence("//text()[contains(., 'credits')]/parent::*"):
                     break
             else:
                 break
@@ -180,9 +180,18 @@ def is_element_present(xpath, timeout=99, poll_frequency=1):
 
 
 # Function to check for element and click it
-def wait_and_click(xpath, timeout=12000):
+def wait_and_click(xpath, timeout=12000, retries=3, retry_delay=2):
     element = wait_until_element(xpath, timeout)
-    element.click()
+
+    for attempt in range(retries):
+        try:
+            element.click()
+            return  # success
+        except ElementClickInterceptedException:
+            if attempt < retries - 1:
+                time.sleep(retry_delay)  # wait before retrying
+            else:
+                raise
 
 
 def wait_and_sendkeys(xpath, message, timeout=12000):
