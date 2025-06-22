@@ -8,13 +8,13 @@ on:
         required: true
         default: 'https://invideo.io/'
       prompt:
-        description: "Enter the prompt"
+        description: 'Enter the prompt'
         required: true
-        default: "Enter a prompt for the Video "
+        default: 'Enter a prompt for the Video'
       message:
-        description: "Enter the message for the comments"
+        description: 'Enter the message for the comments'
         required: true
-        default: "https://wellmedic.in"
+        default: 'https://wellmedic.in'
 
 jobs:
   ui-test:
@@ -27,36 +27,42 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.x'
+          python-version: '3.11'
 
-      - name: Download and Install Chrome v136
-        run: |
-          $ChromeInstaller = "$env:TEMP\chrome_installer_136.exe"
-          Invoke-WebRequest "https://edgedl.me.gvt1.com/edgedl/chrome/install/GoogleChromeStandaloneEnterprise64.msi" -OutFile "$env:TEMP\chrome_v136.msi"
-          Start-Process msiexec.exe -ArgumentList "/i $env:TEMP\chrome_v136.msi /quiet /norestart" -Wait
+      - name: Install Google Chrome (via Chocolatey)
         shell: powershell
-
-      - name: Download and Setup ChromeDriver v136
         run: |
-          $DriverZip = "$env:TEMP\chromedriver_win32.zip"
-          Invoke-WebRequest "https://storage.googleapis.com/chrome-for-testing-public/136.0.7103.92/win64/chromedriver-win64.zip" -OutFile $DriverZip
-          Expand-Archive $DriverZip -DestinationPath "C:\tools\chromedriver"
+          choco install googlechrome --no-progress --yes
+
+      - name: Install matching ChromeDriver
+        shell: powershell
+        run: |
+          $chromeVersion = (& "C:\Program Files\Google\Chrome\Application\chrome.exe" --version).Split()[2]
+          $major = $chromeVersion.Split('.')[0]
+          $jsonUrl = "https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json"
+          $json = Invoke-RestMethod $jsonUrl
+          $match = $json.versions | Where-Object { $_.version -like "$major.*" } | Select-Object -First 1
+          $driverUrl = $match.downloads.chromedriver | Where-Object { $_.platform -eq "win64" } | Select-Object -ExpandProperty url
+          $zipPath = "$env:TEMP\chromedriver.zip"
+          Invoke-WebRequest $driverUrl -OutFile $zipPath
+          Expand-Archive -Path $zipPath -DestinationPath "C:\tools\chromedriver" -Force
           echo "C:\tools\chromedriver\chromedriver-win64" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-        shell: powershell
 
       - name: Verify Chrome and ChromeDriver versions
+        shell: powershell
         run: |
           & "C:\Program Files\Google\Chrome\Application\chrome.exe" --version
           chromedriver --version
-        shell: powershell
 
       - name: Install Python dependencies
-        run: pip install -r requirements.txt
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
       - name: Run Selenium Test
         env:
           URL_TO_TEST: ${{ github.event.inputs.url }}
           PROMPT: ${{ github.event.inputs.prompt }}
           MESSAGE: ${{ github.event.inputs.message }}
-        run: python app.py "$env:URL_TO_TEST" "$env:PROMPT" "$env:MESSAGE"
         shell: powershell
+        run: python app.py "$env:URL_TO_TEST" "$env:PROMPT" "$env:MESSAGE"

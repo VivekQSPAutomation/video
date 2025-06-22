@@ -1,0 +1,62 @@
+name: Selenium UI Automation (Python)
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: 'Website URL to test'
+        required: true
+        default: 'https://invideo.io/'
+      prompt:
+        description: "Enter the prompt"
+        required: true
+        default: "Enter a prompt for the Video "
+      message:
+        description: "Enter the message for the comments"
+        required: true
+        default: "https://wellmedic.in"
+
+jobs:
+  ui-test:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Download and Install Chrome v136
+        run: |
+          $ChromeInstaller = "$env:TEMP\chrome_installer_136.exe"
+          Invoke-WebRequest "https://edgedl.me.gvt1.com/edgedl/chrome/install/GoogleChromeStandaloneEnterprise64.msi" -OutFile "$env:TEMP\chrome_v136.msi"
+          Start-Process msiexec.exe -ArgumentList "/i $env:TEMP\chrome_v136.msi /quiet /norestart" -Wait
+        shell: powershell
+
+      - name: Download and Setup ChromeDriver v136
+        run: |
+          $DriverZip = "$env:TEMP\chromedriver_win32.zip"
+          Invoke-WebRequest "https://storage.googleapis.com/chrome-for-testing-public/136.0.7103.92/win64/chromedriver-win64.zip" -OutFile $DriverZip
+          Expand-Archive $DriverZip -DestinationPath "C:\tools\chromedriver"
+          echo "C:\tools\chromedriver\chromedriver-win64" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+        shell: powershell
+
+      - name: Verify Chrome and ChromeDriver versions
+        run: |
+          & "C:\Program Files\Google\Chrome\Application\chrome.exe" --version
+          chromedriver --version
+        shell: powershell
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run Selenium Test
+        env:
+          URL_TO_TEST: ${{ github.event.inputs.url }}
+          PROMPT: ${{ github.event.inputs.prompt }}
+          MESSAGE: ${{ github.event.inputs.message }}
+        run: python app.py "$env:URL_TO_TEST" "$env:PROMPT" "$env:MESSAGE"
+        shell: powershell

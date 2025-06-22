@@ -7,12 +7,17 @@ import requests
 from platformdirs import user_downloads_dir
 from selenium import webdriver
 from selenium.common import NoSuchElementException, ElementClickInterceptedException
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-driver = webdriver.Chrome()
+# Set Chrome options for headless mode
+chrome_options = Options()
+chrome_options.add_argument("--headless")
 
+# Initialize the Chrome driver
+driver = webdriver.Chrome(options=chrome_options)
 
 def run_selenium(url: str, prompt: str, message: str):
     driver.set_window_size(1382, 744)
