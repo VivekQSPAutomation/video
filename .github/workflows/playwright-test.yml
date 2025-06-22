@@ -29,26 +29,26 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Download and Install Chrome v136
-        run: |
-          $ChromeInstaller = "$env:TEMP\chrome_installer_136.exe"
-          Invoke-WebRequest "https://edgedl.me.gvt1.com/edgedl/chrome/install/GoogleChromeStandaloneEnterprise64.msi" -OutFile "$env:TEMP\chrome_v136.msi"
-          Start-Process msiexec.exe -ArgumentList "/i $env:TEMP\chrome_v136.msi /quiet /norestart" -Wait
-        shell: powershell
-
-      - name: Download and Setup ChromeDriver v136
-        run: |
-          $DriverZip = "$env:TEMP\chromedriver_win32.zip"
-          Invoke-WebRequest "https://storage.googleapis.com/chrome-for-testing-public/136.0.7103.92/win64/chromedriver-win64.zip" -OutFile $DriverZip
-          Expand-Archive $DriverZip -DestinationPath "C:\tools\chromedriver"
-          echo "C:\tools\chromedriver\chromedriver-win64" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-        shell: powershell
-
-      - name: Verify Chrome and ChromeDriver versions
-        run: |
-          & "C:\Program Files\Google\Chrome\Application\chrome.exe" --version
-          chromedriver --version
-        shell: powershell
+#      - name: Download and Install Chrome v136
+#        run: |
+#          $ChromeInstaller = "$env:TEMP\chrome_installer_136.exe"
+#          Invoke-WebRequest "https://edgedl.me.gvt1.com/edgedl/chrome/install/GoogleChromeStandaloneEnterprise64.msi" -OutFile "$env:TEMP\chrome_v136.msi"
+#          Start-Process msiexec.exe -ArgumentList "/i $env:TEMP\chrome_v136.msi /quiet /norestart" -Wait
+#        shell: powershell
+#
+#      - name: Download and Setup ChromeDriver v136
+#        run: |
+#          $DriverZip = "$env:TEMP\chromedriver_win32.zip"
+#          Invoke-WebRequest "https://storage.googleapis.com/chrome-for-testing-public/136.0.7103.92/win64/chromedriver-win64.zip" -OutFile $DriverZip
+#          Expand-Archive $DriverZip -DestinationPath "C:\tools\chromedriver"
+#          echo "C:\tools\chromedriver\chromedriver-win64" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+#        shell: powershell
+#
+#      - name: Verify Chrome and ChromeDriver versions
+#        run: |
+#          & "C:\Program Files\Google\Chrome\Application\chrome.exe" --version
+#          chromedriver --version
+#        shell: powershell
 
       - name: Install Python dependencies
         run: pip install -r requirements.txt
