@@ -1,4 +1,5 @@
 import os
+import random
 import re
 import sys
 import time
@@ -6,18 +7,23 @@ import time
 import requests
 from platformdirs import user_downloads_dir
 from selenium import webdriver
-from selenium.common import NoSuchElementException, ElementClickInterceptedException
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-
-# Set Chrome options for headless mode
-chrome_options = Options()
-chrome_options.add_argument("--headless")
+from selenium.webdriver.common.action_chains import ActionChains
+from selenium.common.exceptions import ElementClickInterceptedException, ElementNotInteractableException, \
+    NoSuchElementException
 
 # Initialize the Chrome driver
+chrome_options = Options()
+chrome_options.add_experimental_option("prefs", {
+    "download.prompt_for_download": False,
+    "download.directory_upgrade": True,
+    "safebrowsing.enabled": True
+})
 driver = webdriver.Chrome(options=chrome_options)
+
 
 def run_selenium(url: str, prompt: str, message: str):
     driver.set_window_size(1382, 744)
@@ -25,11 +31,8 @@ def run_selenium(url: str, prompt: str, message: str):
     wait = WebDriverWait(driver, 1200)
 
     # Open temp mail page
-    driver.get("https://temp-mail.io/en")
-    time.sleep(10)
-    email_input = wait.until(EC.presence_of_element_located((By.XPATH, "//*[@id='email']")))
-    email = email_input.get_attribute('value')
-    print("Temporary Email:", email)
+    while not (email := use_email()):
+        driver.refresh()
 
     # Open target website
     driver.execute_script("window.open('', '_blank');")
@@ -37,21 +40,27 @@ def run_selenium(url: str, prompt: str, message: str):
     driver.get(url)
 
     # Click "Sign up"
-    signup_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[text()='Sign up']")))
-    signup_button.click()
+    wait_and_click("(//*[contains(text(),'Create')])[1]")
 
-    # Fill email field
-    email_field = wait.until(EC.presence_of_element_located((By.XPATH, "//input[@name='email_id']")))
-    email_field.send_keys(email)
+    # Click on the login button
+    wait_and_click("//button[text()='Log In']")
 
-    # Click "Create account"S
-    create_account_btn = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[text()='Create account']")))
-    create_account_btn.click()
+    # Signup button
+    wait_and_click("//*[contains(text(),'Sign Up')]")
+
+    # Email
+    wait_and_sendkeys("//div[@class='signup-email']//input", message=email)
+
+    wait_and_sendkeys("//div[@class='signup-password']//input", message="Hemraj@5")
+
+    wait_and_sendkeys("//div[@class='signup-confirm']//input", message="Hemraj@5")
+
+    wait_and_click("//button[@class='signup-verification-button']")
 
     # Wait for OTP email
     driver.switch_to.window(driver.window_handles[0])
     time.sleep(20)
-    otp_element = wait.until(EC.presence_of_element_located((By.XPATH, "//*[contains(@class,'message__subject')]")))
+    otp_element = wait.until(EC.presence_of_element_located((By.XPATH, "//*[contains(@class,'message__body')]")))
     otp_text = otp_element.text
     otp_match = re.search(r"\d+", otp_text)
     otp = otp_match.group() if otp_match else ""
@@ -63,83 +72,35 @@ def run_selenium(url: str, prompt: str, message: str):
 
     # Enter OTP
     driver.switch_to.window(driver.window_handles[1])
-    otp_input = wait.until(EC.presence_of_element_located((By.XPATH, "//input[@name='code']")))
-    otp_input.send_keys(otp)
+    wait_and_sendkeys("//div[@class='signup-verification']//input", message=otp)
 
-    # Re-locate and click the "Create account" button again to prevent stale element error
-    create_account_btn = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[text()='Create account']")))
-    create_account_btn.click()
+    wait_and_click("//*[contains(text(),'Continue')]")
+    wait_and_click("//div[@class='index-header']//*[contains(text(),'Story ')]")
+    if wait_for_presence("//button[text()='Got It']"):
+        wait_and_click("//button[text()='Got It']",retry_delay=4)
+        wait_and_click("//*[@class='hotSellingTemplate-drawerCloseInon']", retry_delay=4)
+    wait_and_click("//*[contains(text(),'Portrait')]/../../..")
+    wait_and_click("//*[@class='arco-select-view-icon']")
+    wait_and_click("//li[contains(@class, 'arco-select-option') and .//div[text()='हिन्दी']]")
+    wait_and_click(f"(//*[@class='box-icon'])[{random.randint(a=1, b=18)}]")
+    wait_and_click("(//*[contains(text(),'1min')])")
+    wait_and_click("//button[text()='Next']", retry_delay=5)
+    wait_and_click("//button[text()='Next']", retry_delay=20)
+    wait_and_click("//*[contains(text(),'Auto-Cast')]", retry_delay=8)
+    wait_and_click("//button[text()='Next']", retry_delay=10)
+    wait_until_absent("//*[@class='card-state-text']")
+    wait_and_click("//button[text()='Next']", retry_delay=10)
+    wait_and_click("//div[@class='arco-modal']//*[text()='Next']", retry_delay=6)
+    wait_and_click("//div[@class='header-right']//*[text()='Generate']", retry_delay=5)
+    if wait_for_presence("//div[text()='9:16']/parent::*"):
+        wait_and_click("//div[text()='9:16']/parent::*")
+        wait_and_click("(//div[@class='arco-modal']//button[text()='Ok'])[1]", retry_delay=5)
+    wait_until_absent("//div[contains(text(),'Exiting')]")
+    wait_and_click("//button[text()='Submit']", retry_delay=5)
+    wait_and_click("(//div[@class='confirm-modal confirm-modal--dark']//*[text()='Cancel'])[1]", retry_delay=5)
+    wait_hover_and_click("//*[contains(@class,'header-action') and text()='Download']",
+                         "(//div[@class='arco-trigger-popup-wrapper']//descendant::*//li//span)[1]")
 
-    # Fill user details
-    full_name_input = wait.until(EC.presence_of_element_located((By.XPATH, "//input[@name='userFullName']")))
-    full_name_input.send_keys("Wellmedic")
-
-    submit_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@type='submit']")))
-    submit_button.click()
-
-    # Select Instagram
-    instagram_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@id='instagram']")))
-    instagram_button.click()
-    submit_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@type='submit']")))
-    submit_button.click()
-
-    # Select Content Creator
-    content_creator_button = wait.until(
-        EC.element_to_be_clickable((By.XPATH, "(//div[text()='Content creator']//parent::div)[1]")))
-    content_creator_button.click()
-    submit_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@type='submit']")))
-    submit_button.click()
-
-    # Enter birth year
-    birth_year_input = wait.until(EC.presence_of_element_located((By.XPATH, "//input[@name='userBirthDate.year']")))
-    birth_year_input.send_keys("1997")
-    submit_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@type='submit']")))
-    submit_button.click()
-
-    version = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@data-state='closed']")))
-    version = version.text
-    print(version)
-
-    generate_video(prompt)
-
-    # Interact with elements using the new method
-    # Submit button
-    if version != "v3.0":
-        while True:
-            if wait_for_presence("//text()[contains(., 'credits')]/parent::*"):
-                wait_and_click("//p[text()='Create New']/parent::*/parent::a")
-                generate_video(prompt)
-                if not wait_for_presence("//text()[contains(., 'credits')]/parent::*"):
-                    break
-            else:
-                break
-
-        wait_and_click("//*[contains(text(),'Continue')]")
-        if wait_for_presence("//*[contains(text(),'Continue')]"):
-            wait_and_click("//*[contains(text(),'Continue')]")
-        wait_and_click("(//*[contains(text(),'Edit & Download')])[2]")
-        # wait_and_click("//*[contains(text(),'Continue')]")
-        # wait_and_click("(//*[contains(text(),'Continue')])[2]")
-        # wait_and_click("(//*[contains(text(),'Continue')])[2]")
-    else:
-        wait_and_click('//div[contains(text(),"Stock")]')
-        # wait_and_click('//button[contains(@value,"1.0")]')
-        wait_and_click("//*[contains(text(),'Continue')]")
-        # continue button
-    time.sleep(4)
-    wait_and_click("//*[contains(text(),'Download')]")  # Download button
-    time.sleep(5)
-    wait_and_click('//div[contains(text(),"Stock")]')  # Stock watermark
-    wait_and_click('//div[contains(text(),"Normal")]')  # Normal button
-    wait_and_click('//button[@value="480"]')  # Quality button
-    # if version != "v3.0":
-    #     wait_and_click('(//*[contains(text(), "Continue")])')
-    # else:
-    wait_and_click('//*[contains(text(), "Continue")]')
-        # Continue button
-
-    # Keep the browser open
-    print("Script completed. Browser will remain open.")
     while True:
         time.sleep(1)
         wait_for_download(get_downloads_folder())
@@ -151,6 +112,20 @@ def run_selenium(url: str, prompt: str, message: str):
             return True
         else:
             return False
+
+def wait_until_absent(xpath):
+    if not driver.find_elements("xpath", xpath):
+        return False
+    time.sleep(1)
+    return wait_until_absent(xpath)
+
+
+def use_email():
+    driver.get("https://temp-mail.io/en")
+    time.sleep(20)
+    email_input = wait.until(EC.presence_of_element_located((By.XPATH, "//*[@id='email']")))
+    email = email_input.get_attribute('value')
+    return email
 
 
 def generate_video(message):
@@ -195,6 +170,28 @@ def wait_and_click(xpath, timeout=12000, retries=3, retry_delay=2):
         except ElementClickInterceptedException:
             if attempt < retries - 1:
                 time.sleep(retry_delay)  # wait before retrying
+            else:
+                raise
+        finally:
+            time.sleep(retry_delay)
+
+
+def wait_hover_and_click(hover_xpath, click_xpath, timeout=12000, retries=3, retry_delay=2):
+    hover_element = wait_until_element(hover_xpath, timeout)
+
+    for attempt in range(retries):
+        try:
+            # Hover over the element
+            ActionChains(driver).move_to_element(hover_element).perform()
+            time.sleep(1)  # slight delay to allow hover-triggered elements to appear
+
+            # Wait and find the clickable element
+            click_element = wait_until_element(click_xpath, timeout)
+            ActionChains(driver).move_to_element(click_element).click().perform()
+            return  # success
+        except (ElementClickInterceptedException, ElementNotInteractableException, NoSuchElementException):
+            if attempt < retries - 1:
+                time.sleep(retry_delay)
             else:
                 raise
 
@@ -384,7 +381,7 @@ class VideoPost:
 
 
 if __name__ == "__main__":
-    url = sys.argv[1] if len(sys.argv) > 1 else "https://invideo.io/"
+    url = sys.argv[1] if len(sys.argv) > 1 else "https://magiclight.ai/"
     prompt = sys.argv[2] if len(sys.argv) > 2 else "Make 15 seconds promotional video for the Cat on the moving train"
     message = sys.argv[3] if len(sys.argv) > 3 else " Make 15 seconds promotional video for the Cat on the moving train"
     run_selenium(url, prompt, message)
