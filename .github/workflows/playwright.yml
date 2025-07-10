@@ -15,12 +15,10 @@ on:
         description: "Enter the message for the comments"
         required: true
         default: "https://wellmedic.in"
-  push:
-    branches:
-      - magiclight
 
 jobs:
   ui-test:
+    if: github.ref == 'refs/heads/magiclight'  # 🟡 Limit manual runs to the 'test' branch
     runs-on: windows-latest
 
     steps:
