@@ -15,9 +15,6 @@ on:
         description: "Enter the message for the comments"
         required: true
         default: "https://wellmedic.in"
-  push:
-    branches:
-      - magiclight
 
 jobs:
   ui-test:
