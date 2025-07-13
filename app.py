@@ -94,10 +94,12 @@ def run_selenium(url: str, prompt: str, message: str):
     wait_and_click("//div[@class='header-right']//*[text()='Generate']", retry_delay=5)
     if wait_for_presence("//div[text()='9:16']/parent::*"):
         wait_and_click("//div[text()='9:16']/parent::*")
-        wait_and_click("(//div[@class='arco-modal']//button[text()='Ok'])[1]", retry_delay=5)
+        wait_and_click("(//div[@class='arco-modal']//button[text()='Ok'])[1]", retry_delay=10)
     wait_until_absent("//div[contains(text(),'Exiting')]")
-    wait_and_click("//button[text()='Submit']", retry_delay=5)
-    wait_and_click("(//div[@class='confirm-modal confirm-modal--dark']//*[text()='Cancel'])[1]", retry_delay=5)
+    time.sleep(5)
+    if wait_for_presence("//div[@class='arco-modal']//button[text()='Submit']"):
+        wait_and_click("//button[text()='Submit']", retry_delay=5)
+    wait_and_click("(//div[@class='confirm-modal confirm-modal--dark']//*[text()='Cancel'])[1]", retry_delay=10)
     wait_hover_and_click("//*[contains(@class,'header-action') and text()='Download']",
                          "(//div[@class='arco-trigger-popup-wrapper']//descendant::*//li//span)[1]")
 
@@ -108,7 +110,7 @@ def run_selenium(url: str, prompt: str, message: str):
         if latest_file:
             print(f"Downloaded file: {latest_file}")
             file = latest_file.replace('\\', "/")
-            VideoPost().upload_to_both(message=message, video_file=file)
+            VideoPost(app_key="magiclight").upload_to_both(message=message, video_file=file)
             return True
         else:
             return False
@@ -261,9 +263,9 @@ class VideoContent:
 
 class VideoPost:
 
-    def __init__(self):
+    def __init__(self,app_key=None):
         try:
-            response = requests.get("https://vivek05novvv.pythonanywhere.com/data")
+            response = requests.get(f"https://vivek05novvv.pythonanywhere.com/data?app_key={app_key}")
             response.raise_for_status()
             data = response.json()
 
@@ -358,7 +360,7 @@ class VideoPost:
             return False
 
     def get_facebook_video_url(self, video_id):
-        print("[*] Getting Facebook video URL...")
+        print("[*] Getting Facebook video URL...",video_id)
         url = f"https://graph.facebook.com/v21.0/{video_id}?fields=permalink_url,source&access_token={self.page_access_token}"
         response = requests.get(url)
         res_json = response.json()
