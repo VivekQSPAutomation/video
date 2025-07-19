@@ -84,7 +84,7 @@ def run_selenium(url: str, prompt: str, message: str):
     wait_and_click("//*[contains(text(),'Portrait')]/../../..")
     wait_and_click("//*[@class='arco-select-view-icon']")
     wait_and_click("//li[contains(@class, 'arco-select-option') and .//div[text()='हिन्दी']]")
-    wait_and_click(f"(//*[@class='box-icon'])[{random.randint(a=1, b=18)}]")
+    wait_and_click(f"(//*[@class='box-icon'])[{ random.choice([i for i in range(1, 19) if i != 3]) }]")
     quotes = get_random_quote()
     wait_and_sendkeys("//textarea[contains(@placeholder,'Supports')]", quotes + " Create a kids Story on it",
                       with_clear=True)
