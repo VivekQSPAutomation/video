@@ -7,20 +7,22 @@ import time
 import requests
 from platformdirs import user_downloads_dir
 from selenium import webdriver
+from selenium.common.exceptions import ElementClickInterceptedException, ElementNotInteractableException, \
+    NoSuchElementException
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.common.action_chains import ActionChains
-from selenium.common.exceptions import ElementClickInterceptedException, ElementNotInteractableException, \
-    NoSuchElementException
 
 # Initialize the Chrome driver
 chrome_options = Options()
+
+# Experimental options (including your download prefs)
 chrome_options.add_experimental_option("prefs", {
     "download.prompt_for_download": False,
     "download.directory_upgrade": True,
-    "safebrowsing.enabled": True
+    "safebrowsing.enabled": True,
 })
 driver = webdriver.Chrome(options=chrome_options)
 
@@ -77,13 +79,16 @@ def run_selenium(url: str, prompt: str, message: str):
     wait_and_click("//*[contains(text(),'Continue')]")
     wait_and_click("//div[@class='index-header']//*[contains(text(),'Story ')]")
     if wait_for_presence("//button[text()='Got It']"):
-        wait_and_click("//button[text()='Got It']",retry_delay=4)
+        wait_and_click("//button[text()='Got It']", retry_delay=4)
         wait_and_click("//*[@class='hotSellingTemplate-drawerCloseInon']", retry_delay=4)
     wait_and_click("//*[contains(text(),'Portrait')]/../../..")
     wait_and_click("//*[@class='arco-select-view-icon']")
     wait_and_click("//li[contains(@class, 'arco-select-option') and .//div[text()='हिन्दी']]")
     wait_and_click(f"(//*[@class='box-icon'])[{random.randint(a=1, b=18)}]")
-    wait_and_click("(//*[contains(text(),'1min')])")
+    quotes = get_random_quote()
+    wait_and_sendkeys("//textarea[contains(@placeholder,'Supports')]", quotes + " Create a kids Story on it",
+                      with_clear=True)
+    wait_and_click("(//*[contains(@class,'starter-right-buttom-left-list-item')])[1]")
     wait_and_click("//button[text()='Next']", retry_delay=5)
     wait_and_click("//button[text()='Next']", retry_delay=20)
     wait_and_click("//*[contains(text(),'Auto-Cast')]", retry_delay=8)
@@ -115,6 +120,7 @@ def run_selenium(url: str, prompt: str, message: str):
         else:
             return False
 
+
 def wait_until_absent(xpath):
     if not driver.find_elements("xpath", xpath):
         return False
@@ -128,6 +134,21 @@ def use_email():
     email_input = wait.until(EC.presence_of_element_located((By.XPATH, "//*[@id='email']")))
     email = email_input.get_attribute('value')
     return email
+
+
+def get_random_quote():
+    url = "https://zenquotes.io/api/random"
+
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+
+        data = response.json()
+        quote = data[0]['q']
+        return quote
+
+    except requests.exceptions.RequestException as e:
+        return f"Error: {e}"
 
 
 def generate_video(message):
@@ -178,6 +199,24 @@ def wait_and_click(xpath, timeout=12000, retries=3, retry_delay=2):
             time.sleep(retry_delay)
 
 
+def wait_and_mouse_click(driver, xpath, timeout=30, retry_delay=5):
+    """Waits for the element and performs a mouse (left) click via ActionChains."""
+    end_time = time.time() + timeout
+
+    while time.time() < end_time:
+        try:
+            element = WebDriverWait(driver, retry_delay).until(
+                EC.presence_of_element_located((By.XPATH, xpath))
+            )
+            ActionChains(driver).move_to_element(element).click().perform()
+            return True  # Click successful
+        except Exception as e:
+            print(f"Retrying click on {xpath} due to: {e}")
+            time.sleep(retry_delay)
+
+    raise TimeoutError(f"Element with XPath {xpath} not clickable after {timeout} seconds.")
+
+
 def wait_hover_and_click(hover_xpath, click_xpath, timeout=12000, retries=3, retry_delay=2):
     hover_element = wait_until_element(hover_xpath, timeout)
 
@@ -198,9 +237,16 @@ def wait_hover_and_click(hover_xpath, click_xpath, timeout=12000, retries=3, ret
                 raise
 
 
-def wait_and_sendkeys(xpath, message, timeout=12000):
+def wait_and_sendkeys(xpath, message, timeout=12000, with_clear=False):
     element = wait_until_element(xpath, timeout)
+    if with_clear:
+        element.clear()
     element.send_keys(message)
+
+
+def wait_and_get_message(xpath, timeout=12000):
+    element = wait_until_element(xpath, timeout)
+    return element.text
 
 
 def wait_for_presence(xpath, timeout=150):
@@ -263,12 +309,12 @@ class VideoContent:
 
 class VideoPost:
 
-    def __init__(self,app_key=None):
+    def __init__(self, app_key=None):
         try:
             response = requests.get(f"https://vivek05novvv.pythonanywhere.com/data?app_key={app_key}")
             response.raise_for_status()
             data = response.json()
-
+            print(data)
             self.facebook_page = data.get('facebook_page')
             self.insta_page = data.get('insta_page')
             self.page_access_token = data.get('page_access_token')
@@ -280,7 +326,7 @@ class VideoPost:
 
     def upload_to_facebook(self, video_file=None):
         """Uploads video to Facebook Page."""
-        url = f"https://graph-video.facebook.com/v21.0/{self.facebook_page}/videos"
+        url = f"https://graph-video.facebook.com/v23.0/{self.facebook_page}/videos"
 
         if video_file:
             with open(video_file, 'rb') as video:
@@ -360,7 +406,7 @@ class VideoPost:
             return False
 
     def get_facebook_video_url(self, video_id):
-        print("[*] Getting Facebook video URL...",video_id)
+        print("[*] Getting Facebook video URL...", video_id)
         url = f"https://graph.facebook.com/v21.0/{video_id}?fields=permalink_url,source&access_token={self.page_access_token}"
         response = requests.get(url)
         res_json = response.json()
