@@ -27,7 +27,7 @@ chrome_options.add_experimental_option("prefs", {
 driver = webdriver.Chrome(options=chrome_options)
 
 
-def run_selenium(url: str, prompt: str, message: str):
+def run_selenium(url: str, message: str):
     driver.set_window_size(1382, 744)
     global wait
     wait = WebDriverWait(driver, 1200)
@@ -77,7 +77,7 @@ def run_selenium(url: str, prompt: str, message: str):
     wait_and_sendkeys("//div[@class='signup-verification']//input", message=otp)
 
     wait_and_click("//*[contains(text(),'Continue')]")
-    wait_and_click("//div[@class='index-header']//*[contains(text(),'Story ')]")
+    wait_and_click("(//div[contains(@class,'index-header-left-content-item-left-content')])[1]/parent::*")
     if wait_for_presence("//button[text()='Got It']"):
         wait_and_click("//button[text()='Got It']", retry_delay=4)
         wait_and_click("//*[@class='hotSellingTemplate-drawerCloseInon']", retry_delay=4)
@@ -91,7 +91,14 @@ def run_selenium(url: str, prompt: str, message: str):
     wait_and_click("(//*[contains(@class,'starter-right-buttom-left-list-item')])[1]")
     wait_and_click("//button[text()='Next']", retry_delay=5)
     wait_and_click("//button[text()='Next']", retry_delay=20)
-    wait_and_click("//*[contains(text(),'Auto-Cast')]", retry_delay=8)
+    if wait_for_presence("//*[contains(text(),'Auto-Cast')]") == False:
+        wait_and_click("//*[@class='role-avatar-add']", retry_delay=8)
+        wait_and_click("(//*[@class='card-img'])[1]")
+        wait_and_sendkeys("//*[@placeholder='Enter name']","Hemraj")
+        wait_and_click("(//button[text()='Confirm'])[2]")
+    else:
+        wait_and_click("//*[contains(text(),'Auto-Cast')]",retry_delay=5)
+
     wait_and_click("//button[text()='Next']", retry_delay=10)
     wait_until_absent("//*[@class='card-state-text']")
     wait_and_click("//button[text()='Next']", retry_delay=10)
@@ -405,18 +412,24 @@ class VideoPost:
             print("Instagram publishing failed:", publish_response.text)
             return False
 
-    def get_facebook_video_url(self, video_id):
+    def get_facebook_video_url(self, video_id, max_retries=50, delay_seconds=3):
         print("[*] Getting Facebook video URL...", video_id)
+
         url = f"https://graph.facebook.com/v21.0/{video_id}?fields=permalink_url,source&access_token={self.page_access_token}"
-        response = requests.get(url)
-        res_json = response.json()
 
-        video_url = res_json.get('source')  # Direct .mp4 URL
-        if not video_url:
-            raise Exception("Video source URL not found.")
+        for attempt in range(1, max_retries + 1):
+            response = requests.get(url)
+            res_json = response.json()
 
-        print(f"[+] Facebook video URL: {video_url}")
-        return video_url
+            video_url = res_json.get('source')  # Direct .mp4 URL
+            if video_url:
+                print(f"[+] Facebook video URL: {video_url}")
+                return video_url
+
+            print(f"[!] Attempt {attempt}: Video source URL not found. Retrying in {delay_seconds} seconds...")
+            time.sleep(delay_seconds)
+
+        raise Exception(f"Video source URL not found after {max_retries} attempts.")
 
     def upload_to_both(self, message, video_file):
         """Uploads video to both Facebook and Instagram."""
@@ -430,6 +443,6 @@ class VideoPost:
 
 if __name__ == "__main__":
     url = sys.argv[1] if len(sys.argv) > 1 else "https://magiclight.ai/"
-    prompt = sys.argv[2] if len(sys.argv) > 2 else "Make 15 seconds promotional video for the Cat on the moving train"
-    message = sys.argv[3] if len(sys.argv) > 3 else " Make 15 seconds promotional video for the Cat on the moving train"
+    prompt = sys.argv[2] if len(sys.argv) > 2 else ""
+    message = sys.argv[3] if len(sys.argv) > 3 else " "
     run_selenium(url, prompt, message)
