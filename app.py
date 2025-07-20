@@ -77,7 +77,7 @@ def run_selenium(url: str, message: str):
     wait_and_sendkeys("//div[@class='signup-verification']//input", message=otp)
 
     wait_and_click("//*[contains(text(),'Continue')]")
-    wait_and_click("(//div[contains(@class,'index-header-left-content-item-left-content')])[1]/parent::*")
+    wait_and_click("//div[contains(text(),'Generate')]")
     if wait_for_presence("//button[text()='Got It']"):
         wait_and_click("//button[text()='Got It']", retry_delay=4)
         wait_and_click("//*[@class='hotSellingTemplate-drawerCloseInon']", retry_delay=4)
