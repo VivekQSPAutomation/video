@@ -6,15 +6,15 @@ on:
       url:
         description: 'Website URL to test'
         required: true
-        default: 'https://invideo.io/'
+        default: ''
       prompt:
         description: "Enter the prompt"
         required: true
-        default: "Enter a prompt for the Video "
+        default: ""
       message:
         description: "Enter the message for the comments"
         required: true
-        default: "https://wellmedic.in"
+        default: ""
 
 jobs:
   ui-test:

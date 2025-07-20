@@ -17,7 +17,10 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 # Initialize the Chrome driver
 chrome_options = Options()
-
+chrome_options.add_argument("--headless")         # Run headless
+chrome_options.add_argument("--disable-gpu")      # Disable GPU (Windows)
+chrome_options.add_argument("--no-sandbox")       # Recommended for CI
+chrome_options.add_argument("--window-size=1920,1080")
 # Experimental options (including your download prefs)
 chrome_options.add_experimental_option("prefs", {
     "download.prompt_for_download": False,
